@@ -1,0 +1,13 @@
+.git
+.editorconfig
+.gitattributes
+.travis.yml
+composer.lock
+vendor/
+tmp/
+logs/
+Dockerfile
+docker-compose.yml
+README.md
+phpunit.xml.dist
+tests/

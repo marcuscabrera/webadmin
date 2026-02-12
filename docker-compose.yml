@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # Serviço da Aplicação SophiMail (PHP 7.3 + Apache)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sophimail_app
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    environment:
+      # Configurações do Banco de Dados (usadas pelo CakePHP via env())
+      - DATABASE_URL=mysql://sophimail:sophisecret@db/sophimail?encoding=utf8&timezone=UTC&cacheMetadata=true
+      - DEBUG=true
+      - SECURITY_SALT=a_random_salt_for_docker_dev_12345
+      # Outras variáveis de ambiente podem ser adicionadas aqui
+    depends_on:
+      - db
+    networks:
+      - sophimail_network
+
+  # Serviço de Banco de Dados (MySQL 5.7)
+  db:
+    image: mysql:5.7
+    container_name: sophimail_db
+    restart: always
+    environment:
+      - MYSQL_DATABASE=sophimail
+      - MYSQL_USER=sophimail
+      - MYSQL_PASSWORD=sophisecret
+      - MYSQL_ROOT_PASSWORD=rootsecret
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      # Script de inicialização opcional (pode apontar para SQL/mysql.initial.sql)
+      - ./SQL/mysql.initial.sql:/docker-entrypoint-initdb.d/initial.sql
+    networks:
+      - sophimail_network
+
+  # Serviço de Busca (Elasticsearch - Opcional, mas presente no composer.json)
+  elasticsearch:
+    image: elasticsearch:6.8.23
+    container_name: sophimail_es
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    networks:
+      - sophimail_network
+
+networks:
+  sophimail_network:
+    driver: bridge
+
+volumes:
+  db_data:
